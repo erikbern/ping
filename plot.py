@@ -20,4 +20,4 @@ scalar_map = cmx.ScalarMappable(norm=c_norm, cmap=plt.get_cmap('jet'))
 colors = [scalar_map.to_rgba(t) for t in ts]
 
 plt.scatter(xs, ys, c=colors)
-plt.show()
+plt.savefig('world.png')

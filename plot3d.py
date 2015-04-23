@@ -44,7 +44,8 @@ for i, _ in np.ndenumerate(Z):
 
     js = ai.get_nns_by_vector(v, 100)[:30]
     all_ts = [ts[j] for j in js]
-    p = np.median(all_ts)
+    cutoff = np.percentile(all_ts, 90)
+    p = np.mean([t for t in all_ts if t < cutoff])
     Z[i] = p
 
 print 'plotting'

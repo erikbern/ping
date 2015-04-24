@@ -9,39 +9,39 @@ from mpl_toolkits import basemap
 def ll_to_3d(lat, lon):
     lat *= math.pi / 180
     lon *= math.pi / 180
-    x = math.cos(lon) * math.cos(lat)
-    z = math.cos(lon) * math.sin(lat)
-    y = math.sin(lon)
+    x = math.cos(lat) * math.cos(lon)
+    z = math.cos(lat) * math.sin(lon)
+    y = math.sin(lat)
     return [x, y, z]
 
 ai = AnnoyIndex(3, 'angular')
 xs, ys, ts = [], [], []
 for line in open('log.txt'):
     try:
-        lon, lat, t = map(float, line.strip().split())
+        lat, lon, t = map(float, line.strip().split())
     except:
         print 'could not parse', line
         continue
 
     p = ll_to_3d(lat, lon)
     ai.add_item(len(ts), p)
-    xs.append(lat)
-    ys.append(lon)
+    xs.append(lon)
+    ys.append(lat)
     ts.append(t)
-    if len(ts) == 10000:
+    if len(ts) == 1000:
         break
 
 print 'building index...'
-ai.build(20)
+ai.build(5)
 
 print 'building up data points'
-lats = np.arange(-180, 180, 3.0)
-lons = np.arange(-90, 90, 3.0)
-X, Y = np.meshgrid(lats, lons)
+lons = np.arange(-180, 180, 3.0)
+lats = np.arange(-90, 90, 3.0)
+X, Y = np.meshgrid(lons, lats)
 Z = np.zeros(X.shape)
 
 for i, _ in np.ndenumerate(Z):
-    lat, lon = X[i], Y[i]
+    lon, lat = X[i], Y[i]
 
     v = ll_to_3d(lat, lon)
 
@@ -59,10 +59,10 @@ map.drawcountries(linewidth=0.25)
 # map.fillcontinents(color='coral',lake_color='aqua')
 # draw the edge of the map projection region (the projection limb)
 # map.drawmapboundary(fill_color='aqua')
-# draw lat/lon grid lines every 30 degrees.
+# draw lon/lat grid lines every 30 degrees.
 map.drawmeridians(np.arange(0,360,30))
 map.drawparallels(np.arange(-90,90,30))
-# Z = basemap.maskoceans(lat, lon, Z)
+# Z = basemap.maskoceans(lon, lat, Z)
 
 # contour data over the map.
 cf = map.contourf(X, Y, Z, 20, cmap=plt.get_cmap('jet'), norm=plt.Normalize(vmin=0.0, vmax=0.2), latlon=True)

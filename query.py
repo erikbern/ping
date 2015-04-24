@@ -1,5 +1,4 @@
 import random
-import ping
 import traceback
 import subprocess
 import time

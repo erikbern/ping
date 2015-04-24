@@ -4,6 +4,7 @@ from annoy import AnnoyIndex
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import matplotlib.cm as cmx
+from mpl_toolkits import basemap
 
 def ll_to_3d(lat, lon):
     lat *= math.pi / 180
@@ -27,13 +28,15 @@ for line in open('log.txt'):
     xs.append(lat)
     ys.append(lon)
     ts.append(t)
+    if len(ts) == 10000:
+        break
 
 print 'building index...'
 ai.build(20)
 
 print 'building up data points'
-lats = np.arange(-180, 180, 1.0)
-lons = np.arange(-90, 90, 1.0)
+lats = np.arange(-180, 180, 3.0)
+lons = np.arange(-90, 90, 3.0)
 X, Y = np.meshgrid(lats, lons)
 Z = np.zeros(X.shape)
 
@@ -42,21 +45,26 @@ for i, _ in np.ndenumerate(Z):
 
     v = ll_to_3d(lat, lon)
 
-    js = ai.get_nns_by_vector(v, 100)[:30]
+    js = ai.get_nns_by_vector(v, 200)[:100]
     all_ts = [ts[j] for j in js]
     cutoff = np.percentile(all_ts, 90)
     p = np.mean([t for t in all_ts if t < cutoff])
     Z[i] = p
 
 print 'plotting'
-plt.contour(X, Y, Z, 6)
+map = basemap.Basemap(projection='ortho',lat_0=45,lon_0=-100,resolution='l')
+# draw coastlines, country boundaries, fill continents.
+map.drawcoastlines(linewidth=0.25)
+map.drawcountries(linewidth=0.25)
+# map.fillcontinents(color='coral',lake_color='aqua')
+# draw the edge of the map projection region (the projection limb)
+# map.drawmapboundary(fill_color='aqua')
+# draw lat/lon grid lines every 30 degrees.
+map.drawmeridians(np.arange(0,360,30))
+map.drawparallels(np.arange(-90,90,30))
+# Z = basemap.maskoceans(lat, lon, Z)
 
-c_norm = colors.Normalize(vmin=0.0, vmax=0.5)
-scalar_map = cmx.ScalarMappable(norm=c_norm, cmap=plt.get_cmap('jet'))
-
-colors = [scalar_map.to_rgba(t) for t in ts]
-
-plt.scatter(xs, ys, c=colors, marker='x')
+# contour data over the map.
+cf = map.contourf(X, Y, Z, 20, cmap=plt.get_cmap('jet'), norm=plt.Normalize(vmin=0.0, vmax=0.2), latlon=True)
 plt.show()
 
-    

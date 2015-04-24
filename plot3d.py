@@ -51,19 +51,20 @@ for i, _ in np.ndenumerate(Z):
 
 print 'plotting'
 map = basemap.Basemap(projection='cyl') # 'ortho',lat_0=45,lon_0=-100,resolution='l')
+
 # draw coastlines, country boundaries, fill continents.
 map.drawcoastlines(linewidth=0.25)
 map.drawcountries(linewidth=0.25)
-# map.fillcontinents(color='coral',lake_color='aqua')
-# draw the edge of the map projection region (the projection limb)
-# map.drawmapboundary(fill_color='aqua')
+
 # draw lon/lat grid lines every 30 degrees.
 map.drawmeridians(np.arange(0,360,30))
 map.drawparallels(np.arange(-90,90,30))
+
+# remove oceans
 Z = basemap.maskoceans(X, Y, Z, resolution='h', grid=1.25)
 
 # contour data over the map.
 cf = map.contourf(X, Y, Z, 20, cmap=plt.get_cmap('jet'), norm=plt.Normalize(vmin=0.0, vmax=0.5), latlon=True)
 cf = map.contour(X, Y, Z, 20, latlon=True, colors='b')
-plt.show()
 
+plt.show()

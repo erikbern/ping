@@ -57,22 +57,29 @@ for i, _ in np.ndenumerate(Z):
         print count, np.prod(Z.shape)
 
 print 'plotting'
-map = basemap.Basemap(projection='ortho',lat_0=30,lon_0=-30,resolution='l')
-
-# draw coastlines, country boundaries, fill continents.
-map.drawcoastlines(linewidth=0.25)
-map.drawcountries(linewidth=0.25)
-
-# draw lon/lat grid lines every 30 degrees.
-map.drawmeridians(np.arange(0,360,30))
-map.drawparallels(np.arange(-90,90,30))
+maps = {
+    'nyc': basemap.Basemap(projection='ortho',lat_0=30,lon_0=-30,resolution='l'),
+    'asia': basemap.Basemap(projection='ortho',lat_0=0,lon_0=120,resolution='l'),
+    'cyl': basemap.Basemap(projection='cyl')
+}
 
 # remove oceans
 Z = basemap.maskoceans(X, Y, Z, resolution='h', grid=1.25)
+    
+for k, m in maps.iteritems():
+    print 'drawing', k
 
-# contour data over the map.
-cf = map.contourf(X, Y, Z, 20, cmap=plt.get_cmap('jet'), norm=plt.Normalize(vmin=vmin, vmax=vmax), latlon=True)
-map.colorbar(cf)
-# cf = map.contour(X, Y, Z, 20, latlon=True, colors='b')
+    # draw coastlines, country boundaries, fill continents.
+    m.drawcoastlines(linewidth=0.25)
+    m.drawcountries(linewidth=0.25)
 
-plt.show()
+    # draw lon/lat grid lines every 30 degrees.
+    m.drawmeridians(np.arange(0,360,30))
+    m.drawparallels(np.arange(-90,90,30))
+
+    # contour data over the map.
+    cf = m.contourf(X, Y, Z, 20, cmap=plt.get_cmap('jet'), norm=plt.Normalize(vmin=vmin, vmax=vmax), latlon=True)
+    cbar = m.colorbar(cf)
+    cbar.set_label('ping round trip time (s)', rotation=270)
+
+    plt.savefig(k + '.png')

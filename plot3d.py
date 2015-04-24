@@ -30,11 +30,11 @@ for line in open('log.txt'):
     ts.append(t)
 
 print 'building index...'
-ai.build(5)
+ai.build(10)
 
 print 'building up data points'
-lons = np.arange(-180, 181, 1.0)
-lats = np.arange(-90, 91, 1.0)
+lons = np.arange(-180, 181, 0.1)
+lats = np.arange(-90, 91, 0.1)
 X, Y = np.meshgrid(lons, lats)
 Z = np.zeros(X.shape)
 
@@ -43,14 +43,14 @@ for i, _ in np.ndenumerate(Z):
 
     v = ll_to_3d(lat, lon)
 
-    js = ai.get_nns_by_vector(v, 500)[:200]
+    js = ai.get_nns_by_vector(v, 200)
     all_ts = [ts[j] for j in js]
     cutoff = np.percentile(all_ts, 90)
     p = np.mean([t for t in all_ts if t < cutoff])
     Z[i] = p
 
 print 'plotting'
-map = basemap.Basemap(projection='ortho',lat_0=45,lon_0=-100,resolution='l')
+map = basemap.Basemap(projection='cyl') # 'ortho',lat_0=45,lon_0=-100,resolution='l')
 # draw coastlines, country boundaries, fill continents.
 map.drawcoastlines(linewidth=0.25)
 map.drawcountries(linewidth=0.25)
@@ -60,10 +60,10 @@ map.drawcountries(linewidth=0.25)
 # draw lon/lat grid lines every 30 degrees.
 map.drawmeridians(np.arange(0,360,30))
 map.drawparallels(np.arange(-90,90,30))
-# Z = basemap.maskoceans(lon * math.pi/180, lat * math.pi/180, Z)
+Z = basemap.maskoceans(X, Y, Z, resolution='h', grid=1.25)
 
 # contour data over the map.
 cf = map.contourf(X, Y, Z, 20, cmap=plt.get_cmap('jet'), norm=plt.Normalize(vmin=0.0, vmax=0.5), latlon=True)
-cf = map.contour(X, Y, Z, 20, latlon=True)
+cf = map.contour(X, Y, Z, 20, latlon=True, colors='b')
 plt.show()
 

@@ -6,6 +6,8 @@ import matplotlib.colors as colors
 import matplotlib.cm as cmx
 from mpl_toolkits import basemap
 
+vmin, vmax = 0.0, 0.4
+
 def ll_to_3d(lat, lon):
     lat *= math.pi / 180
     lon *= math.pi / 180
@@ -33,11 +35,12 @@ print 'building index...'
 ai.build(10)
 
 print 'building up data points'
-lons = np.arange(-180, 181, 0.1)
-lats = np.arange(-90, 91, 0.1)
+lons = np.arange(-180, 181, 0.2)
+lats = np.arange(-90, 91, 0.2)
 X, Y = np.meshgrid(lons, lats)
 Z = np.zeros(X.shape)
 
+count = 0
 for i, _ in np.ndenumerate(Z):
     lon, lat = X[i], Y[i]
 
@@ -47,10 +50,14 @@ for i, _ in np.ndenumerate(Z):
     all_ts = [ts[j] for j in js]
     cutoff = np.percentile(all_ts, 90)
     p = np.mean([t for t in all_ts if t < cutoff])
+    p = np.clip(p, vmin, vmax)
     Z[i] = p
+    count += 1
+    if count % 1000 == 0:
+        print count, np.prod(Z.shape)
 
 print 'plotting'
-map = basemap.Basemap(projection='cyl') # 'ortho',lat_0=45,lon_0=-100,resolution='l')
+map = basemap.Basemap(projection='ortho',lat_0=30,lon_0=-30,resolution='l')
 
 # draw coastlines, country boundaries, fill continents.
 map.drawcoastlines(linewidth=0.25)
@@ -64,7 +71,8 @@ map.drawparallels(np.arange(-90,90,30))
 Z = basemap.maskoceans(X, Y, Z, resolution='h', grid=1.25)
 
 # contour data over the map.
-cf = map.contourf(X, Y, Z, 20, cmap=plt.get_cmap('jet'), norm=plt.Normalize(vmin=0.0, vmax=0.5), latlon=True)
-cf = map.contour(X, Y, Z, 20, latlon=True, colors='b')
+cf = map.contourf(X, Y, Z, 20, cmap=plt.get_cmap('jet'), norm=plt.Normalize(vmin=vmin, vmax=vmax), latlon=True)
+map.colorbar(cf)
+# cf = map.contour(X, Y, Z, 20, latlon=True, colors='b')
 
 plt.show()

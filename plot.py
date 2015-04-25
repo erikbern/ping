@@ -16,15 +16,21 @@ def ll_to_3d(lat, lon):
     y = math.sin(lat)
     return [x, y, z]
 
-ai = AnnoyIndex(3, 'angular')
-xs, ys, ts = [], [], []
+coords = {}
 for line in open('log.txt'):
     try:
         lat, lon, t = map(float, line.strip().split())
     except:
         print 'could not parse', line
         continue
+    coords.setdefault((lat, lon), []).append(t)
 
+ai = AnnoyIndex(3, 'angular')
+xs, ys, ts = [], [], []
+
+for k, t in coords.iteritems():
+    lat, lon = k
+    t = np.mean(t) # dedup ips with same lat/long
     p = ll_to_3d(lat, lon)
     ai.add_item(len(ts), p)
     xs.append(lon)
@@ -35,8 +41,8 @@ print 'building index...'
 ai.build(10)
 
 print 'building up data points'
-lons = np.arange(-180, 181, 0.2)
-lats = np.arange(-90, 91, 0.2)
+lons = np.arange(-180, 181, 0.1)
+lats = np.arange(-90, 91, 0.1)
 X, Y = np.meshgrid(lons, lats)
 Z = np.zeros(X.shape)
 
@@ -46,7 +52,7 @@ for i, _ in np.ndenumerate(Z):
 
     v = ll_to_3d(lat, lon)
 
-    js = ai.get_nns_by_vector(v, 200)
+    js = ai.get_nns_by_vector(v, 100)
     all_ts = [ts[j] for j in js]
     cutoff = np.percentile(all_ts, 90)
     p = np.mean([t for t in all_ts if t < cutoff])
@@ -57,17 +63,19 @@ for i, _ in np.ndenumerate(Z):
         print count, np.prod(Z.shape)
 
 print 'plotting'
-maps = {
-    'nyc': basemap.Basemap(projection='ortho',lat_0=30,lon_0=-30,resolution='l'),
-    'asia': basemap.Basemap(projection='ortho',lat_0=0,lon_0=120,resolution='l'),
-    'cyl': basemap.Basemap(projection='cyl')
-}
+maps = [
+    ('nyc', (20, 20), basemap.Basemap(projection='ortho',lat_0=30,lon_0=-30,resolution='l')),
+    ('asia', (20, 20), basemap.Basemap(projection='ortho',lat_0=23,lon_0=105,resolution='l')),
+    ('world', (20, 10), basemap.Basemap(projection='cyl', llcrnrlat=-60,urcrnrlat=80,\
+                                           llcrnrlon=-180,urcrnrlon=180,resolution='c'))
+]
 
 # remove oceans
 Z = basemap.maskoceans(X, Y, Z, resolution='h', grid=1.25)
     
-for k, m in maps.iteritems():
+for k, figsize, m in maps:
     print 'drawing', k
+    plt.figure(figsize=figsize)
 
     # draw coastlines, country boundaries, fill continents.
     m.drawcoastlines(linewidth=0.25)

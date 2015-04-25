@@ -30,7 +30,7 @@ xs, ys, ts = [], [], []
 
 for k, t in coords.iteritems():
     lat, lon = k
-    t = np.mean(t) # dedup ips with same lat/long
+    t = np.median(t) # dedup ips with same lat/long
     p = ll_to_3d(lat, lon)
     ai.add_item(len(ts), p)
     xs.append(lon)
@@ -41,8 +41,8 @@ print 'building index...'
 ai.build(10)
 
 print 'building up data points'
-lons = np.arange(-180, 181, 0.1)
-lats = np.arange(-90, 91, 0.1)
+lons = np.arange(-180, 180, 0.25)
+lats = np.arange(-90, 90, 0.25)
 X, Y = np.meshgrid(lons, lats)
 Z = np.zeros(X.shape)
 
@@ -52,7 +52,7 @@ for i, _ in np.ndenumerate(Z):
 
     v = ll_to_3d(lat, lon)
 
-    js = ai.get_nns_by_vector(v, 100)
+    js = ai.get_nns_by_vector(v, 50)
     all_ts = [ts[j] for j in js]
     cutoff = np.percentile(all_ts, 90)
     p = np.mean([t for t in all_ts if t < cutoff])
@@ -90,4 +90,4 @@ for k, figsize, m in maps:
     cbar = m.colorbar(cf)
     cbar.set_label('ping round trip time (s)', rotation=270)
 
-    plt.savefig(k + '.png')
+    plt.savefig(k + '.png', bbox_inches='tight')
